@@ -1,8 +1,12 @@
+import 'package:chat/helpers/mostrar_alerta.dart';
+import 'package:chat/services/auth_service.dart';
+import 'package:chat/services/socket_service.dart';
 import 'package:chat/widgets/btn_azul.dart';
 import 'package:chat/widgets/custom_input.dart';
 import 'package:chat/widgets/labels.dart';
 import 'package:chat/widgets/logo.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class RegisterPage extends StatelessWidget {
   @override
@@ -49,6 +53,9 @@ class __FormState extends State<_Form> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    final socketService = Provider.of<SocketService>(context);
+
     return Container(
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 50),
@@ -69,15 +76,28 @@ class __FormState extends State<_Form> {
           CustomInput(
             icon: Icons.lock_outline,
             placeholder: 'Password',
-            //keyboardType: TextInputType.emailAddress,
+            isPassword: true,
             textController: passCtrl,
           ),
           BotonAzul(
-              text: 'Ingresar',
-              onPressed: () {
-                print(emailCtrl.text);
-                print(passCtrl.text);
-              })
+              text: 'Crear Cuenta',
+              onPressed: authService.autenticando
+                  ? null
+                  : () async {
+                      final registroOK = await authService.register(
+                          nombreCtrl.text.trim(),
+                          emailCtrl.text.trim(),
+                          passCtrl.text.trim());
+
+                      if (registroOK) {
+                        // cpnectar el socket service
+                        socketService.connect();
+                        Navigator.popAndPushNamed(context, 'usuarios');
+                      } else {
+                        mostrarAlerta(
+                            context, 'Registro Incorrecto', registroOK);
+                      }
+                    })
         ],
       ),
     );
